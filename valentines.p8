@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
+local procedural_mode = false
+
 local actors = {}
 local flags = {
   solid = 0,
@@ -8,6 +10,7 @@ local flags = {
   collectible = 2
 }
 local cloud_sprites = {20, 21}
+local clouds = {}
 local camera_position = {x = 0, y = 0}
 
 function ceil(x) return -flr(-x) end
@@ -26,6 +29,21 @@ function create_actor(sprite, x, y, w, h)
   }
   add(actors, actor)
   return actor
+end
+
+function create_cloud(ox, oy)
+  local cloud = {
+    sprite = cloud_sprites[ceil(rnd(#cloud_sprites))],
+    x = ox + rnd(128),
+    y = oy + rnd(128)
+  }
+  add(clouds, cloud)
+end
+
+function update_cloud(cloud)
+  cloud.x -= 1
+
+  if (cloud.x < -8) del(clouds, cloud)
 end
 
 function map_solid(cell_x, cell_y)
@@ -103,12 +121,40 @@ function camera_follow_actor(actor)
   camera_position.y = max(0, camera_position.y)
 end
 
+function fill_map(value)
+  for x=0, 128 do
+    for y=0,64 do
+      mset(x, y, value)
+    end
+  end
+end
+
+function randomize_map()
+  for x=0, 128 do
+    for y=0,64 do
+      if (rnd(1) > 0.8) mset(x, y, 16)
+    end
+  end
+end
+
 function _init()
   p1 = create_actor(2, 0, 0, 0.8, 1)
   p2 = create_actor(3, 8, 1, 0.8, 1)
+
+  for i=1,5 do
+    create_cloud(128, 0)
+  end
+
+  if procedural_mode then
+    fill_map(0)
+    randomize_map()
+  end
 end
 
+local t = 0
 function _update()
+  t += 1
+
   foreach(actors, apply_gravity)
   apply_user_input(p1)
   foreach(actors, resolve_collisions)
@@ -117,6 +163,9 @@ function _update()
 
   resolve_collections(p1)
   camera_follow_actor(p1)
+
+  if (t % 30 == 0) create_cloud(camera_position.x + 128, camera_position.y)
+  foreach(clouds, update_cloud)
 end
 
 function _draw()
@@ -126,6 +175,9 @@ function _draw()
 
   local cx, cy = camera_position.x / 8, camera_position.y / 8
   camera(camera_position.x, camera_position.y)
+
+  foreach(clouds, draw_actor)
+
   map(0, 0, 0, 0, 128, 32, 2 ^ 0 + 2 ^ 1 + 2 ^ 2 + 2 ^ 3)
 
   foreach(actors, draw_actor)
