@@ -54,6 +54,10 @@ function map_collectible(cell_x, cell_y)
   return fget(mget(cell_x, cell_y), flags.collectible)
 end
 
+function map_hazard(cell_x, cell_y)
+  return fget(mget(cell_x, cell_y), flags.hazard)
+end
+
 function apply_gravity(actor)
   actor.dy += 0.4
 end
@@ -97,6 +101,14 @@ function resolve_collections(actor)
     mset(cx, cy, 0)
     local count = actor.collection[collectible] or 0
     actor.collection[collectible] = count + 1
+  end
+end
+
+function resolve_hazards(actor)
+  local cx, cy = actor_vel_to_map(actor)
+
+  if map_hazard(actor.x / 8, actor.y / 8) then
+    run()
   end
 end
 
@@ -162,6 +174,8 @@ function _update()
   foreach(actors, apply_inertia)
 
   resolve_collections(p1)
+  resolve_hazards(p1)
+
   camera_follow_actor(p1)
 
   if (t % 30 == 0) create_cloud(camera_position.x + 128, camera_position.y)
