@@ -25,22 +25,7 @@ function printh(...)
   old_printh(output)
 end
 
-function create_actor(sprite, x, y, w, h)
-  local actor = {
-    dx = 0,
-    dy = 0,
-    x = x,
-    y = y,
-    w = w,
-    h = h,
-    touching_ground = false,
-    sprite = sprite,
-    collection = {}
-  }
-  add(actors, actor)
-  return actor
-end
-
+-- CLOUDS START
 function create_cloud(ox, oy)
   local cloud = {
     sprite = cloud_sprites[ceil(rnd(#cloud_sprites))],
@@ -55,25 +40,11 @@ function update_cloud(cloud)
 
   if (cloud.x < -8) del(clouds, cloud)
 end
+-- CLOUDS END
 
-function map_solid(cell_x, cell_y)
-  return fget(mget(cell_x, cell_y), flags.solid)
-end
-
-function map_collectible(cell_x, cell_y)
-  return fget(mget(cell_x, cell_y), flags.collectible)
-end
-
-function map_hazard(cell_x, cell_y)
-  return fget(mget(cell_x, cell_y), flags.hazard)
-end
-
+-- MAP START
 function pixel_to_map(x, y)
   return flr(x / 8), flr(y / 8)
-end
-
-function pixel_coord_has(x, y, flag)
-  return fget(mget(pixel_to_map(x, y)))
 end
 
 -- this returns something more like x1, y1, x2, y2
@@ -95,6 +66,24 @@ function map_has(x, y, w, h, flag)
     end
   end
 end
+-- MAP END
+
+-- ACTORS START
+function create_actor(sprite, x, y, w, h)
+  local actor = {
+    dx = 0,
+    dy = 0,
+    x = x,
+    y = y,
+    w = w,
+    h = h,
+    touching_ground = false,
+    sprite = sprite,
+    collection = {}
+  }
+  add(actors, actor)
+  return actor
+end
 
 function apply_gravity(actor)
   actor.dy += 0.4
@@ -113,22 +102,19 @@ function apply_user_input(actor)
   actor.dy = mid(-4, actor.dy, 4)
 end
 
-function actor_vel_to_map(actor)
-  return (actor.x - 1 + actor.dx) / 8, (actor.y - 1 + actor.dy) / 8  -- maps are 0-indexed, 8 pixels squared
-end
-
 function resolve_collisions(actor)
+  local solid_flag = flags.solid
   local x1, y1, x2, y2 = map_bbox(actor.x, actor.y, actor.w, actor.h)
   local vx1, vy1, vx2, vy2 = map_bbox(actor.x + actor.dx, actor.y + actor.dy, actor.w, actor.h)
 
-  if (map_solid(vx2, y1) or map_solid(vx2, y2)) actor.dx = min(0, actor.dx)
-  if (map_solid(vx1, y1) or map_solid(vx1, y2)) actor.dx = max(0, actor.dx)
+  if (cell_has(vx2, y1, solid_flag) or cell_has(vx2, y2, solid_flag)) actor.dx = min(0, actor.dx)
+  if (cell_has(vx1, y1, solid_flag) or cell_has(vx1, y2, solid_flag)) actor.dx = max(0, actor.dx)
 
-  if map_solid(x1, vy2) or map_solid(x2, vy2) then
+  if cell_has(x1, vy2, solid_flag) or cell_has(x2, vy2, solid_flag) then
     actor.dy = min(vy2 * 8 - flr(actor.y + actor.h), actor.dy)
     actor.touching_ground = true
   end
-  if (map_solid(x1, vy1) or map_solid(x2, vy1)) actor.dy = max(y1 * 8 - flr(actor.y), actor.dy)
+  if (cell_has(x1, vy1, solid_flag) or cell_has(x2, vy1, solid_flag)) actor.dy = max(y1 * 8 - flr(actor.y), actor.dy)
 
   if (vx1 < 0) actor.dx = max(0, actor.dx)
   if (vx2 > map_width) actor.dx = min(0, actor.dx)
@@ -175,7 +161,9 @@ function camera_follow_actor(actor)
   camera_position.x = max(0, camera_position.x)
   camera_position.y = max(0, camera_position.y)
 end
+-- ACTORS END
 
+-- PROCEDURAL START
 function fill_map(value)
   for x=0, map_width do
     for y=0,map_height do
@@ -191,6 +179,7 @@ function randomize_map()
     end
   end
 end
+-- PROCEDURAL END
 
 function _init()
   p1 = create_actor(2, 0, 0, 4, 8)
@@ -230,7 +219,7 @@ function _draw()
   cls()
   rectfill(0, 0, 128, 128, 1)
 
-  local cx, cy = camera_position.x / 8, camera_position.y / 8
+  local cx, cy = pixel_to_map(camera_position.x, camera_position.y)
   camera(camera_position.x, camera_position.y)
 
   foreach(clouds, draw_actor)
