@@ -3,6 +3,8 @@ version 5
 __lua__
 local procedural_mode = false
 
+
+local map_width, map_height = 128, 64
 local actors = {}
 local flags = {
   solid = 0,
@@ -122,14 +124,16 @@ function resolve_collisions(actor)
   if (map_solid(vx2, y1) or map_solid(vx2, y2)) actor.dx = min(0, actor.dx)
   if (map_solid(vx1, y1) or map_solid(vx1, y2)) actor.dx = max(0, actor.dx)
 
-  if map_solid(vx1, vy2) or map_solid(vx2, vy2) then
+  if map_solid(x1, vy2) or map_solid(x2, vy2) then
     actor.dy = min(0, actor.dy)
     actor.touching_ground = true
   end
-  if (map_solid(vx1, vy1) or map_solid(vx2, vy1)) actor.dy = max(0, actor.dy)
+  if (map_solid(x1, vy1) or map_solid(x2, vy1)) actor.dy = max(0, actor.dy)
 
   if (vx1 < 0) actor.dx = max(0, actor.dx)
+  if (vx2 > map_width) actor.dx = min(0, actor.dx)
   if (vy1 < 0) actor.dy = max(0, actor.dy)
+  if (vy2 > map_height) run()
 end
 
 function resolve_collections(actor)
@@ -173,16 +177,16 @@ function camera_follow_actor(actor)
 end
 
 function fill_map(value)
-  for x=0, 128 do
-    for y=0,64 do
+  for x=0, map_width do
+    for y=0,map_height do
       mset(x, y, value)
     end
   end
 end
 
 function randomize_map()
-  for x=0, 128 do
-    for y=0,64 do
+  for x=0, map_width do
+    for y=0,map_height do
       if (rnd(1) > 0.8) mset(x, y, 16)
     end
   end
@@ -217,7 +221,7 @@ function _update()
 
   camera_follow_actor(p1)
 
-  if (t % 30 == 0) create_cloud(camera_position.x + 128, camera_position.y)
+  if (t % 30 == 0) create_cloud(camera_position.x + map_width, camera_position.y)
   foreach(clouds, update_cloud)
 end
 
@@ -231,11 +235,11 @@ function _draw()
 
   foreach(clouds, draw_actor)
 
-  map(0, 0, 0, 0, 128, 32, 2 ^ 0 + 2 ^ 1 + 2 ^ 2 + 2 ^ 3)
+  map(0, 0, 0, 0, map_width, map_height, 2 ^ 0 + 2 ^ 1 + 2 ^ 2 + 2 ^ 3)
 
   foreach(actors, draw_actor)
 
-  map(0, 0, 0, 0, 128, 32, 2 ^ 4 + 2 ^ 5 + 2 ^ 6 + 2 ^ 7)
+  map(0, 0, 0, 0, map_width, map_height, 2 ^ 4 + 2 ^ 5 + 2 ^ 6 + 2 ^ 7)
 end
 
 __gfx__
