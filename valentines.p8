@@ -76,16 +76,20 @@ end
 
 -- this returns something more like x1, y1, x2, y2
 function map_bbox(x, y, w, h)
-  w,h = pixel_to_map(x + w, y + h)
+  w,h = pixel_to_map(x + w - 1, y + h - 1)
   x,y = pixel_to_map(x, y)
   return x, y, w, h
+end
+
+function cell_has(cx, cy, flag)
+  return fget(mget(cx, cy), flag)
 end
 
 function map_has(x, y, w, h, flag)
   x, y, w, h = map_bbox(x, y, w, h)
   for ix=x,w do
     for iy=y,h do
-      if (fget(mget(ix, iy), flag)) return ix, iy
+      if (cell_has(ix, iy, flag)) return ix, iy
     end
   end
 end
@@ -109,20 +113,20 @@ function actor_vel_to_map(actor)
 end
 
 function resolve_collisions(actor)
-  local cx, cy = actor_vel_to_map(actor)
+  local x1, y1, x2, y2 = map_bbox(actor.x, actor.y, actor.w, actor.h)
+  local vx1, vy1, vx2, vy2 = map_bbox(actor.x + actor.dx, actor.y + actor.dy, actor.w, actor.h)
 
-  if (map_solid(cx + 1, cy)) actor.dx = min(0, actor.dx)
-  if (map_solid(cx - 1, cy)) actor.dx = max(0, actor.dx)
+  if (map_solid(vx2, y1) or map_solid(vx2, y2)) actor.dx = min(0, actor.dx)
+  if (map_solid(vx1, y1) or map_solid(vx1, y2)) actor.dx = max(0, actor.dx)
 
-  cx = actor_vel_to_map(actor)
+  if map_solid(vx1, vy2) or map_solid(vx2, vy2) then
+    actor.dy = min(0, actor.dy)
+    actor.touching_ground = true
+  end
+  if (map_solid(vx1, vy1) or map_solid(vx2, vy1)) actor.dy = max(0, actor.dy)
 
-  if (map_solid(cx, cy + 1) or map_solid(cx + 1, cy + 1)) actor.dy, actor.touching_ground = min(0, actor.dy), true
-  if (map_solid(cx, cy) or map_solid(cx + 1, cy)) actor.dy = max(0, actor.dy)
-
-  cx, cy = actor_vel_to_map(actor)
-
-  if (cx < 0) actor.dx = max(0, actor.dx)
-  if (cy < 0) actor.dy = max(0, actor.dy)
+  if (vx1 < 0) actor.dx = max(0, actor.dx)
+  if (vy1 < 0) actor.dy = max(0, actor.dy)
 end
 
 function resolve_collections(actor)
