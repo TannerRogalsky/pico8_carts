@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
-local procedural_mode = false
+local procedural_mode = true
 
 
 local map_width, map_height = 128, 64
@@ -125,10 +125,10 @@ function resolve_collisions(actor)
   if (map_solid(vx1, y1) or map_solid(vx1, y2)) actor.dx = max(0, actor.dx)
 
   if map_solid(x1, vy2) or map_solid(x2, vy2) then
-    actor.dy = min(0, actor.dy)
+    actor.dy = min(vy2 * 8 - flr(actor.y + actor.h), actor.dy)
     actor.touching_ground = true
   end
-  if (map_solid(x1, vy1) or map_solid(x2, vy1)) actor.dy = max(0, actor.dy)
+  if (map_solid(x1, vy1) or map_solid(x2, vy1)) actor.dy = max(y1 * 8 - flr(actor.y), actor.dy)
 
   if (vx1 < 0) actor.dx = max(0, actor.dx)
   if (vx2 > map_width) actor.dx = min(0, actor.dx)
