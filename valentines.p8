@@ -102,7 +102,10 @@ function apply_user_input(actor)
   if (btn(0)) actor.dx -= 0.2
   if (btn(1)) actor.dx += 0.2
 
-  if (btn(2) and actor.touching_ground) actor.dy, actor.touching_ground = actor.dy - 4, false
+  if btn(2) and actor.touching_ground then
+    actor.dy = -4
+    actor.touching_ground = false
+  end
 
   actor.dx = mid(-1.5, actor.dx, 1.5)
   actor.dy = mid(-4, actor.dy, 4)
