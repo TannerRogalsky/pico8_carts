@@ -107,6 +107,17 @@ function create_actor(sprite, x, y, w, h)
   return actor
 end
 
+function actors_intersect(actor, actors)
+  local x1, y1, x2, y2 = actor.x, actor.y, actor.x + actor.w, actor.y + actor.h
+
+  for other in all(actors) do
+    local ox1, oy1, ox2, oy2 = other.x, other.y, other.x + other.w, other.y + other.h
+    if (not (ox1 > x2 or ox2 < x1 or oy1 > y2 or oy2 < y1)) return true
+  end
+
+  return false
+end
+
 function apply_gravity(actor)
   actor.dy += 0.4
 end
@@ -333,6 +344,7 @@ function _update()
   foreach(actors, apply_inertia)
 
   foreach(walkers, update_walker)
+  if (actors_intersect(p1, walkers)) run()
 
   resolve_collections(p1)
   resolve_hazards(p1)
